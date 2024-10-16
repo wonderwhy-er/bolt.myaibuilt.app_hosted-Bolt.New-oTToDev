@@ -9,7 +9,7 @@ import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
-import JSZip from 'jszip';
+import * as zip from '@zip.js/zip.js';
 import { saveAs } from 'file-saver';
 
 export interface ArtifactState {
@@ -270,23 +270,26 @@ export class WorkbenchStore {
   }
 
   async exportProjectAsZip() {
-    const zip = new JSZip();
-    const files = this.files.get();
+    const writer = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
+
+    const files = this.files.get();  // Get the files from your project
 
     // Ensure all files are saved before exporting
     await this.saveAllFiles();
 
     for (const [filePath, dirent] of Object.entries(files)) {
       if (dirent?.type === 'file' && !dirent.isBinary) {
-        zip.file(filePath, dirent.content);
+        // Ensure we are using relative paths
+        const relativePath = filePath.replace(/^.*?project\//, '');  // Remove the absolute path, keeping relative path inside project folder
+        await writer.add(relativePath, new zip.TextReader(dirent.content));
       }
     }
 
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    console.log(zipBlob);
+    const zipBlob = await writer.close();  // Finalize the zip creation
+
+    // Trigger download of the zip file
     saveAs(zipBlob, 'project.zip');
   }
-
   #getArtifact(id: string) {
     const artifacts = this.artifacts.get();
     return artifacts[id];

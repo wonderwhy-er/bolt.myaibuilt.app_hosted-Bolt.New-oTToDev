@@ -91,7 +91,6 @@
     "@types/react-dom": "^18.2.7",
     "fast-glob": "^3.3.2",
     "is-ci": "^3.0.1",
-    "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
     "prettier": "^3.3.2",
     "sass-embedded": "^1.79.5",
