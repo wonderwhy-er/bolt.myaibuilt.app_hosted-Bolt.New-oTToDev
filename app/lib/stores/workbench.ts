@@ -9,6 +9,8 @@ import { EditorStore } from './editor';
 import { FilesStore, type FileMap } from './files';
 import { PreviewsStore } from './previews';
 import { TerminalStore } from './terminal';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 export interface ArtifactState {
   id: string;
@@ -265,6 +267,24 @@ export class WorkbenchStore {
     }
 
     artifact.runner.runAction(data);
+  }
+
+  async exportProjectAsZip() {
+    const zip = new JSZip();
+    const files = this.files.get();
+
+    // Ensure all files are saved before exporting
+    await this.saveAllFiles();
+
+    for (const [filePath, dirent] of Object.entries(files)) {
+      if (dirent?.type === 'file' && !dirent.isBinary) {
+        zip.file(filePath, dirent.content);
+      }
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    console.log(zipBlob);
+    saveAs(zipBlob, 'project.zip');
   }
 
   #getArtifact(id: string) {

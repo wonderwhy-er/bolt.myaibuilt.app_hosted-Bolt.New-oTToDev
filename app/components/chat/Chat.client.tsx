@@ -25,6 +25,8 @@ export function Chat() {
 
   const { ready, initialMessages, storeMessageHistory } = useChatHistory();
 
+
+
   return (
     <>
       {ready && <ChatImpl initialMessages={initialMessages} storeMessageHistory={storeMessageHistory} />}
@@ -118,6 +120,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     workbenchStore.abortAllActions();
   };
 
+  const handleExport = () => {
+    console.log('handle export');
+    workbenchStore.exportProjectAsZip();
+  };
+
   useEffect(() => {
     const textarea = textareaRef.current;
 
@@ -199,6 +206,8 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const [messageRef, scrollRef] = useSnapScroll();
 
   return (
+    <>
+      <button onClick={handleExport}>Export</button>
     <BaseChat
       ref={animationScope}
       textareaRef={textareaRef}
@@ -230,5 +239,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
         });
       }}
     />
+      </>
   );
 });
