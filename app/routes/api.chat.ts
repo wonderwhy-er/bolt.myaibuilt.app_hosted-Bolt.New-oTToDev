@@ -11,6 +11,13 @@ export async function action(args: ActionFunctionArgs) {
 async function chatAction({ context, request }: ActionFunctionArgs) {
   const { messages } = await request.json<{ messages: Messages }>();
 
+  // Check for the presence of the cookie
+  const cookieHeader = request.headers.get('Cookie');
+  const openRouterApiKey = cookieHeader?.match(/openrouter-api-key=([^;]+)/)?.[1];
+
+  // Log the cookie value
+  console.log('OpenRouter API Key from cookie:', openRouterApiKey);
+
   const stream = new SwitchableStream();
 
   try {
@@ -32,13 +39,14 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'assistant', content });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
-        const result = await streamText(messages, context.cloudflare.env, options);
+        // Pass the API key to the streamText function
+        const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey);
 
         return stream.switchSource(result.toAIStream());
       },
     };
 
-    const result = await streamText(messages, context.cloudflare.env, options);
+    const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey);
 
     stream.switchSource(result.toAIStream());
 
