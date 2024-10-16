@@ -75,7 +75,7 @@ export function Header() {
           className="shadow-sm border border-bolt-elements-borderColor bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-lg overflow-hidden focus:outline-none resize-none text-md text-bolt-elements-textPrimary placeholder-bolt-elements-textTertiary bg-transparent"
           style={{
             fontFamily: 'text-security-disc',
-            '-webkit-text-security': 'disc'
+            'WebkitTextSecurity': 'disc'
           }}
           type="text"
           placeholder="Set your Open Router API Key here..."
