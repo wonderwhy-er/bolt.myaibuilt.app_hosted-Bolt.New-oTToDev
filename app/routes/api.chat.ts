@@ -15,7 +15,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   // Check for the presence of the cookie
   const cookieHeader = request.headers.get('Cookie');
   const openRouterApiKey = cookieHeader?.match(/openrouter-api-key=([^;]+)/)?.[1];
-  const openRouterModelId = cookieHeader?.match(/openrouter-api-key=([^;]+)/)?.[1];
+  const openRouterModelId = cookieHeader?.match(/openrouter-model=([^;]+)/)?.[1];
 
   const stream = new SwitchableStream();
 
@@ -45,7 +45,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
       },
     };
 
-    const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey);
+    const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey, openRouterModelId);
 
     stream.switchSource(result.toAIStream());
 
