@@ -1,6 +1,6 @@
 import { streamText as _streamText, convertToCoreMessages } from 'ai';
 import { getAPIKey } from '~/lib/.server/llm/api-key';
-import { getAnthropicModel } from '~/lib/.server/llm/model';
+import { getModel } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt } from './prompts';
 
@@ -21,9 +21,9 @@ export type Messages = Message[];
 
 export type StreamingOptions = Omit<Parameters<typeof _streamText>[0], 'model'>;
 
-export function streamText(messages: Messages, env: Env, options?: StreamingOptions, apiKey?: string) {
+export function streamText(messages: Messages, env: Env, options?: StreamingOptions, apiKey?: string, modelId?: string) {
   return _streamText({
-    model: getAnthropicModel(apiKey || getAPIKey(env)),
+    model: getModel(apiKey || getAPIKey(env), modelId || "anthropic/claude-3.5-sonnet:beta"),
     system: getSystemPrompt(),
     maxTokens: MAX_TOKENS,
     headers: {

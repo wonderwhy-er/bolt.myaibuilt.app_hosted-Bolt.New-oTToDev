@@ -3,6 +3,7 @@ import { MAX_RESPONSE_SEGMENTS, MAX_TOKENS } from '~/lib/.server/llm/constants';
 import { CONTINUE_PROMPT } from '~/lib/.server/llm/prompts';
 import { streamText, type Messages, type StreamingOptions } from '~/lib/.server/llm/stream-text';
 import SwitchableStream from '~/lib/.server/llm/switchable-stream';
+import { getOpenRouterClient } from '~/lib/.server/llm/model';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -14,9 +15,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   // Check for the presence of the cookie
   const cookieHeader = request.headers.get('Cookie');
   const openRouterApiKey = cookieHeader?.match(/openrouter-api-key=([^;]+)/)?.[1];
-
-  // Log the cookie value
-  console.log('OpenRouter API Key from cookie:', openRouterApiKey);
+  const openRouterModelId = cookieHeader?.match(/openrouter-api-key=([^;]+)/)?.[1];
 
   const stream = new SwitchableStream();
 
@@ -40,7 +39,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
         // Pass the API key to the streamText function
-        const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey);
+        const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey, openRouterModelId);
 
         return stream.switchSource(result.toAIStream());
       },

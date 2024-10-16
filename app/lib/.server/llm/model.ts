@@ -1,8 +1,12 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-export function getAnthropicModel(apiKey: string) {
-  const openrouter = createOpenRouter({
+
+export function getOpenRouterClient(apiKey: string) {
+  return createOpenRouter({
     apiKey: apiKey,
   });
+}
 
-  return openrouter("anthropic/claude-3.5-sonnet:beta");
+export function getModel(apiKey: string, modelId: string) {
+  const openrouter = getOpenRouterClient(apiKey);
+  return openrouter(modelId);
 }
