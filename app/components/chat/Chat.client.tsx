@@ -120,11 +120,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     workbenchStore.abortAllActions();
   };
 
-  const handleExport = () => {
-    console.log('handle export');
-    workbenchStore.exportProjectAsZip();
-  };
-
   useEffect(() => {
     const textarea = textareaRef.current;
 
@@ -207,7 +202,6 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   return (
     <>
-      <button onClick={handleExport}>Export</button>
     <BaseChat
       ref={animationScope}
       textareaRef={textareaRef}

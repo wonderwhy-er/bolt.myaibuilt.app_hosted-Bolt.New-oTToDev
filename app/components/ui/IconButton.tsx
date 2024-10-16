@@ -36,6 +36,7 @@ export const IconButton = memo(
     title,
     onClick,
     children,
+     label = "",
   }: IconButtonProps) => {
     return (
       <button
@@ -57,6 +58,7 @@ export const IconButton = memo(
         }}
       >
         {children ? children : <div className={classNames(icon, getIconSize(size), iconClassName)}></div>}
+        {label && <span className="pl-3px">{label}</span>}
       </button>
     );
   },

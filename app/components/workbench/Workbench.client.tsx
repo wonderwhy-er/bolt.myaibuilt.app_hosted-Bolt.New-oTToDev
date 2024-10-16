@@ -67,6 +67,11 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     workbenchStore.currentView.set(view);
   };
 
+  const handleExport = () => {
+    console.log('handle export');
+    workbenchStore.exportProjectAsZip();
+  };
+
   useEffect(() => {
     if (hasPreview) {
       setSelectedView('preview');
@@ -120,6 +125,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden">
               <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor">
                 <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
+                <IconButton onClick={handleExport} icon="i-ph-download-simple" label="Download Project"/>
                 <div className="ml-auto" />
                 {selectedView === 'code' && (
                   <PanelHeaderButton
