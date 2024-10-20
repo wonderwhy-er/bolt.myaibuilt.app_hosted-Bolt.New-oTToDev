@@ -13,17 +13,12 @@ function getFreeModels(models) {
 
 export function Header() {
   const chat = useStore(chatStore);
-  const [apiKey, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState(Cookies.get('openrouter-api-key') || '');
   const [models, setModels] = useState([]);
-  const [selectedModel, setSelectedModel] = useState(Cookies.get('openrouter-model'));
+  const [selectedModel, setSelectedModel] = useState(Cookies.get('openrouter-model')  || "google/gemini-flash-1.5-exp");
 
   useEffect(() => {
-    const savedApiKey = Cookies.get('openrouter-api-key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-
-    }
-    fetchModels(savedApiKey);
+    fetchModels(apiKey);
   }, []);
 
   useEffect(() => {
@@ -68,7 +63,7 @@ export function Header() {
         <a href="/" className="text-2xl font-semibold text-accent flex items-center">
           <span className="i-bolt:logo-text?mask w-[46px] inline-block" />
         </a>
-        <span className="ml-16">API Key</span>
+        <span className="ml-16">For better payed models</span>
         <input
           onChange={onAPIKeyChange}
           value={apiKey}
@@ -78,15 +73,15 @@ export function Header() {
             'WebkitTextSecurity': 'disc'
           }}
           type="text"
-          placeholder="Set your Open Router API Key here..."
+          placeholder="Open Router API Key"
         />
         <span>
-          <a href="https://openrouter.ai/settings/keys">Get Key Here</a>
+          <a href="https://openrouter.ai/settings/keys">Get Here</a>
         </span>
         <select
           value={selectedModel}
           onChange={(e) => setSelectedModel(e.target.value)}
-          className="ml-4 p-2 border rounded min-w-[10rem] max-w-[20rem] bg-bolt-elements-background-depth-1 text-bolt-elements-textPrimary dark:bg-bolt-elements-background-depth-2 dark:text-bolt-elements-textPrimary border-bolt-elements-borderColor"
+          className="ml-4 p-2 border rounded min-w-[10rem] bg-bolt-elements-background-depth-1 text-bolt-elements-textPrimary dark:bg-bolt-elements-background-depth-2 dark:text-bolt-elements-textPrimary border-bolt-elements-borderColor"
         >
           {(apiKey ? models : getFreeModels(models))
             .sort((a, b) => a.name.localeCompare(b.name)).map((model) => (
@@ -98,9 +93,6 @@ export function Header() {
           ))}
         </select>
       </div>
-      <span className="flex-1 px-4 truncate text-center text-bolt-elements-textPrimary">
-        <ClientOnly>{() => <ChatDescription />}</ClientOnly>
-      </span>
       {chat.started && (
         <ClientOnly>
           {() => (
