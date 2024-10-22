@@ -15,6 +15,8 @@ For a quick overview and recap of the project, watch this video:
 ## Try a Live Hosted Demo here
 You can try the version hosted on my domain here:  
 [https://bolt.myaibuilt.app/](https://bolt.myaibuilt.app/)
+or if its down alternative link
+[CloudFlare](https://9356f8c3.bolt-2xk.pages.dev/)
 
 ## Key Differences from Bolt.New
 - Instead of using Anthropic, it uses OpenRouter and allows setting the API key from the client
