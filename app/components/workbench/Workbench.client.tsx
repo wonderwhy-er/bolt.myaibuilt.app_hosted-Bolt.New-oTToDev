@@ -1,11 +1,11 @@
 import { useStore } from '@nanostores/react';
 import { motion, type HTMLMotionProps, type Variants } from 'framer-motion';
 import { computed } from 'nanostores';
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
 import {
   type OnChangeCallback as OnEditorChange,
-  type OnScrollCallback as OnEditorScroll,
+  type OnScrollCallback as OnEditorScroll
 } from '~/components/editor/codemirror/CodeMirrorEditor';
 import { IconButton } from '~/components/ui/IconButton';
 import { PanelHeaderButton } from '~/components/ui/PanelHeaderButton';
@@ -27,12 +27,12 @@ const viewTransition = { ease: cubicEasingFn };
 const sliderOptions: SliderOptions<WorkbenchViewType> = {
   left: {
     value: 'code',
-    text: 'Code',
+    text: 'Code'
   },
   right: {
     value: 'preview',
-    text: 'Preview',
-  },
+    text: 'Preview'
+  }
 };
 
 const workbenchVariants = {
@@ -40,20 +40,22 @@ const workbenchVariants = {
     width: 0,
     transition: {
       duration: 0.2,
-      ease: cubicEasingFn,
-    },
+      ease: cubicEasingFn
+    }
   },
   open: {
     width: 'var(--workbench-width)',
     transition: {
       duration: 0.2,
-      ease: cubicEasingFn,
-    },
-  },
+      ease: cubicEasingFn
+    }
+  }
 } satisfies Variants;
 
 export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => {
   renderLogger.trace('Workbench');
+
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const hasPreview = useStore(computed(workbenchStore.previews, (previews) => previews.length > 0));
   const showWorkbench = useStore(workbenchStore.showWorkbench);
@@ -62,6 +64,18 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
   const unsavedFiles = useStore(workbenchStore.unsavedFiles);
   const files = useStore(workbenchStore.files);
   const selectedView = useStore(workbenchStore.currentView);
+  const directoryRef = useRef<FileSystemDirectoryHandle | undefined>(undefined);
+  const [lastSync, setLastSync] = useState<number | false>(false);
+  const [isSyncFeatureAvailable, setIsSyncFeatureAvailable] = useState(false);
+
+  useEffect(() => {
+    // Check if the `showDirectoryPicker` feature is available in the browser
+    if (window.showDirectoryPicker) {
+      setIsSyncFeatureAvailable(true);
+    } else {
+      setIsSyncFeatureAvailable(false);
+    }
+  }, []); // Empty dependency array ensures this runs once after initial render
 
   const setSelectedView = (view: WorkbenchViewType) => {
     workbenchStore.currentView.set(view);
@@ -80,6 +94,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
 
   useEffect(() => {
     workbenchStore.setDocuments(files);
+    handleSyncFiles();
   }, [files]);
 
   const onEditorChange = useCallback<OnEditorChange>((update) => {
@@ -104,6 +119,42 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
     workbenchStore.resetCurrentDocument();
   }, []);
 
+  const handleSyncFiles = useCallback(async (e?: React.MouseEvent) => {
+    if (directoryRef.current || e) {
+      setIsSyncing(true);
+
+      try {
+        const directoryHandle: FileSystemDirectoryHandle = directoryRef.current || await window.showDirectoryPicker();
+        directoryRef.current = directoryHandle; // update the ref to have the latest value
+
+        await workbenchStore.syncFiles(directoryHandle);
+        setLastSync(new Date().getTime());
+      } catch (error) {
+        console.error('Error syncing files:', error);
+      } finally {
+        setIsSyncing(false);
+      }
+    }
+  }, []);
+
+  let label;
+  if (lastSync) {
+    const now = new Date();
+    const seconds = Math.floor((now - lastSync) / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    label = `${minutes > 0 ? minutes + 'm' : ''} ${remainingSeconds}s ago`;
+  }
+
+  let syncLabel = "Live Sync in Chrome, Edge, Opera";
+  if(isSyncFeatureAvailable) {
+    if(isSyncing) {
+      syncLabel = "Syncing...";
+    } else {
+      syncLabel = lastSync ? 'Synced ' + label : 'Select sync folder'
+    }
+  }
+
   return (
     chatStarted && (
       <motion.div
@@ -117,27 +168,32 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
             'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 w-[var(--workbench-inner-width)] mr-4 z-0 transition-[left,width] duration-200 bolt-ease-cubic-bezier',
             {
               'left-[var(--workbench-left)]': showWorkbench,
-              'left-[100%]': !showWorkbench,
-            },
+              'left-[100%]': !showWorkbench
+            }
           )}
         >
           <div className="absolute inset-0 px-6">
-            <div className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden">
+            <div
+              className="h-full flex flex-col bg-bolt-elements-background-depth-2 border border-bolt-elements-borderColor shadow-sm rounded-lg overflow-hidden">
               <div className="flex items-center px-3 py-2 border-b border-bolt-elements-borderColor">
                 <Slider selected={selectedView} options={sliderOptions} setSelected={setSelectedView} />
-                <IconButton onClick={handleExport} icon="i-ph-download-simple" label="Download Project"/>
+                <IconButton onClick={handleExport} icon="i-ph-download-simple" label="Download Project" />
                 <div className="ml-auto" />
-                {selectedView === 'code' && (
+                <>
+                  <PanelHeaderButton disabled={!isSyncFeatureAvailable} className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
+                    {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:cloud-arrow-down" />}
+                    {syncLabel}
+                  </PanelHeaderButton>
                   <PanelHeaderButton
                     className="mr-1 text-sm"
-                    onClick={() => {
+                    onClick={(event) => {
                       workbenchStore.toggleTerminal(!workbenchStore.showTerminal.get());
                     }}
                   >
                     <div className="i-ph:terminal" />
                     Toggle Terminal
                   </PanelHeaderButton>
-                )}
+                </>
                 <IconButton
                   icon="i-ph:x-circle"
                   className="-mr-1"

@@ -290,6 +290,36 @@ export class WorkbenchStore {
     // Trigger download of the zip file
     saveAs(zipBlob, 'project.zip');
   }
+
+  async syncFiles(targetHandle: FileSystemDirectoryHandle) {
+    const files = this.files.get();
+    const syncedFiles = [];
+
+    for (const [filePath, dirent] of Object.entries(files)) {
+      if (dirent?.type === 'file' && !dirent.isBinary) {
+        const relativePath = filePath.replace(/^\/home\/project\//, '');
+        const pathSegments = relativePath.split('/');
+        let currentHandle = targetHandle;
+
+        for (let i = 0; i < pathSegments.length - 1; i++) {
+          currentHandle = await currentHandle.getDirectoryHandle(pathSegments[i], { create: true });
+        }
+
+        // create or get the file
+        const fileHandle = await currentHandle.getFileHandle(pathSegments[pathSegments.length - 1], { create: true });
+
+        // write the file content
+        const writable = await fileHandle.createWritable();
+        await writable.write(dirent.content);
+        await writable.close();
+
+        syncedFiles.push(relativePath);
+      }
+    }
+
+    return syncedFiles;
+  }
+
   #getArtifact(id: string) {
     const artifacts = this.artifacts.get();
     return artifacts[id];
