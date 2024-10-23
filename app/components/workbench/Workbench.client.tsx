@@ -180,7 +180,7 @@ export const Workbench = memo(({ chatStarted, isStreaming }: WorkspaceProps) => 
                 <IconButton onClick={handleExport} icon="i-ph-download-simple" label="Download Project" />
                 <div className="ml-auto" />
                 <>
-                  <PanelHeaderButton disabled={!isSyncFeatureAvailable} className="mr-1 text-sm" onClick={handleSyncFiles} disabled={isSyncing}>
+                  <PanelHeaderButton disabled={!isSyncFeatureAvailable || isSyncing} className="mr-1 text-sm" onClick={handleSyncFiles}>
                     {isSyncing ? <div className="i-ph:spinner" /> : <div className="i-ph:cloud-arrow-down" />}
                     {syncLabel}
                   </PanelHeaderButton>
