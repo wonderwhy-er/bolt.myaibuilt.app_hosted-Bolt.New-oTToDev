@@ -21,8 +21,11 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   try {
     const options: StreamingOptions = {
       toolChoice: 'none',
-      onFinish: async ({ text: content, finishReason }) => {
-        if (finishReason !== 'length') {
+      onFinish: async (rason) => {
+        if (rason.finishReason === 'error') {
+          console.error(rason);
+        }
+        if (rason.finishReason !== 'length') {
           return stream.close();
         }
 
@@ -34,7 +37,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         console.log(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
-        messages.push({ role: 'assistant', content });
+        messages.push({ role: 'assistant', content: rason.text });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
         // Pass the API key to the streamText function
