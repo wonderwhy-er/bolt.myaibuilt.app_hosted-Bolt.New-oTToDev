@@ -21,11 +21,17 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   try {
     const options: StreamingOptions = {
       toolChoice: 'none',
-      onFinish: async (rason) => {
-        if (rason.finishReason === 'error') {
-          console.error(rason);
+      onFinish: async (reason) => {
+        if (reason.finishReason === 'error') {
+          console.error(reason);
+          if (stream.switches >= MAX_RESPONSE_SEGMENTS) {
+            console.log('Trying again');
+            const switchesLeft = MAX_RESPONSE_SEGMENTS - stream.switches;
+            const result = await streamText(messages, context.cloudflare.env, options, openRouterApiKey, openRouterModelId);
+            return stream.switchSource(result.toAIStream());
+          }
         }
-        if (rason.finishReason !== 'length') {
+        if (reason.finishReason !== 'length') {
           return stream.close();
         }
 
@@ -37,7 +43,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
 
         console.log(`Reached max token limit (${MAX_TOKENS}): Continuing message (${switchesLeft} switches left)`);
 
-        messages.push({ role: 'assistant', content: rason.text });
+        messages.push({ role: 'assistant', content: reason.text });
         messages.push({ role: 'user', content: CONTINUE_PROMPT });
 
         // Pass the API key to the streamText function
