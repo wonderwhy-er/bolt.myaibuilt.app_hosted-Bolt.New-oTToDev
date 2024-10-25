@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "lint:fix": "npm run lint -- --fix",
-    "start": "bindings=$(./bindings.sh) && wrangler pages dev ./build/client $bindings",
+    "start": "sh -c '[[ \"$(uname -s)\" == *NT* ]] && wrangler pages dev ./build/client || (bindings=$(./bindings.sh) && wrangler pages dev ./build/client $bindings)'",
     "typecheck": "tsc",
     "typegen": "wrangler types",
     "preview": "npm run build && npm run start"
