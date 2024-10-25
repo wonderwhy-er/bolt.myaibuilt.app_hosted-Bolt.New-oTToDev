@@ -33,8 +33,9 @@ You can now select a folder (you'll need to do this each time you start the edit
 This feature is based on [PR #30](https://github.com/coleam00/bolt.new-any-llm/pull/30) for another fork. Special thanks to [Muzaffer Kadir](https://github.com/muzafferkadir) for the initial implementation.
 
 
-## Ongoing Work
-- Figure out how to host not on Cloudflare but on an Ubuntu droplet correctly (currently it's unstable).
-- Fix how the Bolt.New terminal works and improves error detection and fixing like on commercial Bolt.New
+## Ongoing Work sorted by Priority
+- Add more model providers, add Antropic back, add Google, OpenAI, may be a couple more. Solves 2 problems. 1. Some people have API keys from their company from one partner provider. 2. More Free models for free API keyless version
 - Add ZIP file upload functionality.
 - Maybe add GitHub integration to upload/download repos
+- Fix how the Bolt.New terminal works and improves error detection and fixing like on commercial Bolt.New
+- Figure out how to host not on Cloudflare but on an Ubuntu droplet correctly (currently it's unstable).
