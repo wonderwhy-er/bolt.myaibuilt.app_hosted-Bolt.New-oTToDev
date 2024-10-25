@@ -18,7 +18,7 @@
     "start": "bindings=$(./bindings.sh) && wrangler pages dev ./build/client $bindings",
     "typecheck": "tsc",
     "typegen": "wrangler types",
-    "preview": "pnpm run build && pnpm run start"
+    "preview": "npm run build && npm run start"
   },
   "engines": {
     "node": ">=18.18.0"
