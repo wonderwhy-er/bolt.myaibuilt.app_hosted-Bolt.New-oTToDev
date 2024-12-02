@@ -17,47 +17,92 @@ import Cookies from 'js-cookie';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
 import styles from './BaseChat.module.scss';
-import type { ProviderInfo } from '~/utils/types';
+import type { ProviderInfo, Provider, Model } from '~/utils/types';
 import { ExportChatButton } from '~/components/chat/chatExportAndImport/ExportChatButton';
 import { ImportButtons } from '~/components/chat/chatExportAndImport/ImportButtons';
 import { ExamplePrompts } from '~/components/chat/ExamplePrompts';
 import { WelcomeIntro } from './WelcomeIntro';
+import CreatableSelect from 'react-select/creatable';
+import { themeStore } from '~/lib/stores/theme';
+import { useStore } from '@nanostores/react';
+import type { StylesConfig } from 'react-select';
+
+const customStyles = (isDarkMode: string): StylesConfig<any, false> => ({
+  control: (styles: any) => ({
+    ...styles,
+    backgroundColor: isDarkMode === 'dark' ? '#1a1a1a' : '#ffffff',
+    borderColor: isDarkMode === 'dark' ? '#333333' : '#cccccc',
+    color: isDarkMode === 'dark' ? '#ffffff' : '#000000',
+  }),
+  menu: (styles: any) => ({
+    ...styles,
+    backgroundColor: isDarkMode === 'dark' ? '#1a1a1a' : '#ffffff',
+    color: isDarkMode === 'dark' ? '#ffffff' : '#000000',
+  }),
+  option: (styles: any, { isFocused, isSelected }: { isFocused: boolean; isSelected: boolean }) => ({
+    ...styles,
+    backgroundColor: isFocused
+      ? isDarkMode === 'dark'
+        ? '#333333'
+        : '#e6e6e6'
+      : isSelected
+        ? isDarkMode === 'dark'
+          ? '#555555'
+          : '#cccccc'
+        : isDarkMode === 'dark'
+          ? '#1a1a1a'
+          : '#ffffff',
+    color: isDarkMode === 'dark' ? '#ffffff' : '#000000',
+  }),
+  singleValue: (styles: any) => ({
+    ...styles,
+    color: isDarkMode === 'dark' ? '#ffffff' : '#000000',
+  }),
+});
 
 // @ts-ignore TODO: Introduce proper types
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ModelSelector = ({ model, setModel, provider, setProvider, modelList, providerList, apiKeys }) => {
+  const options = providerList.map((p: Provider) => ({ value: p.name, label: p.name }));
+
   return (
     <div className="mb-2 flex gap-2 flex-col sm:flex-row">
-      <select
-        value={provider?.name}
-        onChange={(e) => {
-          setProvider(providerList.find((p: ProviderInfo) => p.name === e.target.value));
+      <CreatableSelect
+        value={provider ? { value: provider.name, label: provider.name } : null}
+        onChange={(selectedOption, actionMeta) => {
+          if (actionMeta.action === 'create-option' && selectedOption) {
+            const newProvider = { name: selectedOption.value };
+            setProvider(newProvider);
+          } else if (selectedOption) {
+            const selectedProvider = providerList.find((p: Provider) => p.name === selectedOption.value);
+            setProvider(selectedProvider || null);
 
-          const firstModel = [...modelList].find((m) => m.provider == e.target.value);
-          setModel(firstModel ? firstModel.name : '');
+            const firstModel = modelList.find((m: Model) => m.provider === selectedOption.value);
+            setModel(firstModel ? firstModel.name : '');
+          }
         }}
+        options={options}
+        styles={customStyles(useStore(themeStore))}
         className="flex-1 p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-bolt-elements-focus transition-all"
-      >
-        {providerList.map((provider: ProviderInfo) => (
-          <option key={provider.name} value={provider.name}>
-            {provider.name}
-          </option>
-        ))}
-      </select>
-      <select
-        key={provider?.name}
-        value={model}
-        onChange={(e) => setModel(e.target.value)}
+      />
+      <CreatableSelect
+        value={model ? { value: model, label: model } : null}
+        onChange={(selectedOption, actionMeta) => {
+          if (actionMeta.action === 'create-option' && selectedOption) {
+            setModel(selectedOption.value);
+          } else if (selectedOption) {
+            setModel(selectedOption.value);
+          }
+        }}
+        options={modelList
+          .filter((e: Model) => e.provider === provider?.name && e.name)
+          .map((modelOption: Model) => ({
+            value: modelOption.name,
+            label: modelOption.label,
+          }))}
+        styles={customStyles(useStore(themeStore))}
         className="flex-1 p-2 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background text-bolt-elements-textPrimary focus:outline-none focus:ring-2 focus:ring-bolt-elements-focus transition-all lg:max-w-[70%] "
-      >
-        {[...modelList]
-          .filter((e) => e.provider == provider?.name && e.name)
-          .map((modelOption) => (
-            <option key={modelOption.name} value={modelOption.name}>
-              {modelOption.label}
-            </option>
-          ))}
-      </select>
+      />
     </div>
   );
 };
@@ -112,12 +157,11 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       importChat,
       exportChat,
     },
-    ref
+    ref,
   ) => {
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
     const [modelList, setModelList] = useState(MODEL_LIST);
-
 
     useEffect(() => {
       // Load API keys from cookies on component mount
@@ -138,7 +182,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         Cookies.remove('apiKeys');
       }
 
-      initializeModelList().then(modelList => {
+      initializeModelList().then((modelList) => {
         setModelList(modelList);
       });
     }, []);
@@ -153,7 +197,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
           expires: 30, // 30 days
           secure: true, // Only send over HTTPS
           sameSite: 'strict', // Protect against CSRF
-          path: '/' // Accessible across the site
+          path: '/', // Accessible across the site
         });
       } catch (error) {
         console.error('Error saving API keys to cookies:', error);
@@ -165,7 +209,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         ref={ref}
         className={classNames(
           styles.BaseChat,
-          'relative flex flex-col lg:flex-row h-full w-full overflow-hidden bg-bolt-elements-background-depth-1'
+          'relative flex flex-col lg:flex-row h-full w-full overflow-hidden bg-bolt-elements-background-depth-1',
         )}
         data-chat-visible={showChat}
       >
@@ -173,13 +217,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         <div ref={scrollRef} className="flex flex-col lg:flex-row overflow-y-auto w-full h-full">
           <div className={classNames(styles.Chat, 'flex flex-col flex-grow lg:min-w-[var(--chat-min-width)] h-full')}>
             {!chatStarted && (
-              <div id="intro" style={{maxWidth: "74rem"}} className="mt-[5vh] mx-auto text-center px-4 lg:px-0">
+              <div id="intro" style={{ maxWidth: '74rem' }} className="mt-[5vh] mx-auto text-center px-4 lg:px-0">
                 <WelcomeIntro />
               </div>
             )}
             <div
               className={classNames('pt-6 px-2 sm:px-6', {
-                'h-full flex flex-col': chatStarted
+                'h-full flex flex-col': chatStarted,
               })}
             >
               <ClientOnly>
@@ -198,8 +242,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 className={classNames(
                   'bg-bolt-elements-background-depth-2 border-y border-bolt-elements-borderColor relative w-full max-w-chat mx-auto z-prompt',
                   {
-                    'sticky bottom-0': chatStarted
-                  })}
+                    'sticky bottom-0': chatStarted,
+                  },
+                )}
               >
                 <ModelSelector
                   key={provider?.name + ':' + modelList.length}
@@ -222,7 +267,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                 <div
                   className={classNames(
-                    'shadow-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-lg overflow-hidden transition-all'
+                    'shadow-lg border border-bolt-elements-borderColor bg-bolt-elements-prompt-background backdrop-filter backdrop-blur-[8px] rounded-lg overflow-hidden transition-all',
                   )}
                 >
                   <textarea
@@ -245,7 +290,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     }}
                     style={{
                       minHeight: TEXTAREA_MIN_HEIGHT,
-                      maxHeight: TEXTAREA_MAX_HEIGHT
+                      maxHeight: TEXTAREA_MAX_HEIGHT,
                     }}
                     placeholder="How can Bolt help you today?"
                     translate="no"
@@ -274,14 +319,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         className={classNames('transition-all', {
                           'opacity-100!': enhancingPrompt,
                           'text-bolt-elements-item-contentAccent! pr-1.5 enabled:hover:bg-bolt-elements-item-backgroundAccent!':
-                          promptEnhanced
+                            promptEnhanced,
                         })}
                         onClick={() => enhancePrompt?.()}
                       >
                         {enhancingPrompt ? (
                           <>
-                            <div
-                              className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin"></div>
+                            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin"></div>
                             <div className="ml-1.5">Enhancing prompt...</div>
                           </>
                         ) : (
@@ -295,8 +339,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                     </div>
                     {input.length > 3 ? (
                       <div className="text-xs text-bolt-elements-textTertiary">
-                        Use <kbd
-                        className="kdb px-1.5 py-0.5 rounded bg-bolt-elements-background-depth-2">Shift</kbd> +{' '}
+                        Use <kbd className="kdb px-1.5 py-0.5 rounded bg-bolt-elements-background-depth-2">Shift</kbd> +{' '}
                         <kbd className="kdb px-1.5 py-0.5 rounded bg-bolt-elements-background-depth-2">Return</kbd> for
                         a new line
                       </div>
@@ -308,8 +351,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             {!chatStarted && ImportButtons(importChat)}
             {!chatStarted && ExamplePrompts(sendMessage)}
           </div>
-          <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />
-          }</ClientOnly>
+          <ClientOnly>{() => <Workbench chatStarted={chatStarted} isStreaming={isStreaming} />}</ClientOnly>
         </div>
       </div>
     );

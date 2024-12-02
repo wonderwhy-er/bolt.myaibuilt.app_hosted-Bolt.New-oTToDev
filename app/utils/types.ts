@@ -35,3 +35,13 @@ export interface ProviderInfo {
   labelForGetApiKey?: string;
   icon?: string;
 }
+
+export interface Provider {
+  name: string;
+}
+
+export interface Model {
+  name: string;
+  provider: string;
+  label?: string;
+}
